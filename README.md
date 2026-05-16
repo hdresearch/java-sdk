@@ -1,0 +1,104 @@
+# Vers Java API Library
+
+This library provides convenient access to the [Vers](https://hdr.is) REST API from Java.
+
+It is generated with [Sterling](https://github.com/hdresearch/sterling).
+
+## Installation
+
+### Maven
+
+```xml
+<dependency>
+    <groupId>sh.vers</groupId>
+    <artifactId>vers-sdk</artifactId>
+    <version>0.1.8</version>
+</dependency>
+```
+
+### Gradle
+
+```groovy
+implementation 'sh.vers:vers-sdk:0.1.8'
+```
+
+## Usage
+
+```java
+import sh.vers.sdk.VersClient;
+
+public class Example {
+    public static void main(String[] args) throws Exception {
+        VersClient client = new VersClient(
+            "https://api.vers.sh",  // or set VERS_BASE_URL env var
+            "your-api-key"   // or set VERS_API_KEY env var
+        );
+
+        // List all VMs
+        var response = client.listVms(null, null);
+        System.out.println(response.body());
+
+        // Create a new root VM
+        var vm = client.createNewRootVm(java.util.Map.of("vm_config", java.util.Map.of()), null);
+        System.out.println(vm.body());
+
+        client.close();
+    }
+}
+```
+
+## Configuration
+
+```java
+import sh.vers.sdk.VersClient;
+import java.time.Duration;
+
+VersClient client = new VersClient(
+    "https://api.vers.sh",       // base URL
+    "your-api-key",       // API key
+    2,                    // max retries
+    Duration.ofSeconds(30), // timeout
+    null                  // optional custom HttpClient
+);
+```
+
+## Error handling
+
+```java
+import sh.vers.sdk.Errors.*;
+
+try {
+    client.deleteVm("nonexistent-id", null);
+} catch (NotFoundError e) {
+    System.out.println("Not found: " + e.getStatus() + " " + e.getMessage());
+} catch (APIError e) {
+    System.out.println("API error: " + e.getStatus());
+}
+```
+
+## Retries
+
+Requests are automatically retried up to 2 times on 5xx errors and connection failures,
+with exponential backoff and jitter. The client respects `Retry-After` headers (capped at 60s).
+
+## Per-request options
+
+```java
+import sh.vers.sdk.RequestOptions;
+import java.time.Duration;
+
+RequestOptions options = new RequestOptions()
+    .addHeader("X-Custom-Header", "value")
+    .setTimeout(Duration.ofSeconds(60));
+
+client.listVms(null, options);
+```
+
+## Requirements
+
+- Java 11+
+- Jackson Databind
+
+## License
+
+MIT
